@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iO Partners · Commute Analysis Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<!-- ExcelJS — full image + styling support -->
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<style>
+:root{
+  --primary:#372473;--secondary:#6B46E1;--accent:#FF7145;
+  --light-bg:#F0ECFC;--teal:#00AAA0;--gray:#9BA0A5;
+  --white:#FFFFFF;--black:#000000;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Poppins',Arial,sans-serif;font-weight:300;background:var(--light-bg);min-height:100vh;color:var(--black);}
+
+/* ── PASSWORD ── */
+#pw-screen{position:fixed;inset:0;background:linear-gradient(135deg,#1a0f4d 0%,var(--primary) 55%,var(--secondary) 100%);display:flex;align-items:center;justify-content:center;z-index:999;}
+.pw-card{background:var(--white);border-radius:20px;padding:52px 44px;width:100%;max-width:420px;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.35);}
+.pw-logo{font-size:38px;font-weight:600;color:var(--primary);letter-spacing:-2px;margin-bottom:4px;}
+.pw-logo span{color:var(--secondary);}
+.pw-tagline{font-size:11px;color:var(--gray);letter-spacing:.5px;text-transform:uppercase;margin-bottom:30px;}
+.pw-title{font-size:21px;font-weight:600;color:var(--primary);margin-bottom:6px;}
+.pw-sub{font-size:13px;color:var(--gray);margin-bottom:28px;}
+.pw-input{width:100%;padding:14px 18px;border:2px solid #e8e0f8;border-radius:10px;font-family:'Poppins',sans-serif;font-size:15px;outline:none;transition:border-color .2s;margin-bottom:14px;}
+.pw-input:focus{border-color:var(--secondary);}
+.pw-btn{width:100%;padding:15px;background:var(--secondary);color:white;border:none;border-radius:10px;font-family:'Poppins',sans-serif;font-weight:600;font-size:15px;cursor:pointer;transition:background .2s;}
+.pw-btn:hover{background:var(--primary);}
+.pw-error{color:#e53935;font-size:13px;margin-top:10px;display:none;}
+
+/* ── MAIN ── */
+#main-app{display:none;}
+header{background:var(--primary);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--secondary);}
+.hdr-brand{display:flex;align-items:center;gap:14px;}
+.hdr-mark{font-size:20px;font-weight:600;color:white;letter-spacing:-1px;border:2px solid rgba(255,255,255,.4);border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;}
+.hdr-mark span{color:rgba(107,70,225,.9);}
+.hdr-name{font-size:15px;font-weight:600;color:white;letter-spacing:-.3px;}
+.hdr-sub{font-size:11px;color:rgba(255,255,255,.55);letter-spacing:.3px;}
+.hdr-tool{font-size:12px;color:rgba(255,255,255,.5);letter-spacing:.5px;text-transform:uppercase;}
+
+main{max-width:1440px;margin:0 auto;padding:28px 24px 40px;}
+.card{background:var(--white);border-radius:14px;padding:28px 32px;margin-bottom:22px;box-shadow:0 3px 16px rgba(55,36,115,.07);}
+.card-title{font-size:14px;font-weight:600;color:var(--primary);margin-bottom:22px;padding-bottom:14px;border-bottom:2px solid var(--light-bg);display:flex;align-items:center;gap:12px;}
+.step{width:28px;height:28px;background:var(--secondary);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:600;flex-shrink:0;}
+.step.done{background:var(--teal);}
+
+.api-row{display:flex;gap:10px;align-items:center;}
+.api-input{flex:1;padding:12px 16px;border:2px solid #e8e0f8;border-radius:9px;font-family:'Poppins',sans-serif;font-size:14px;outline:none;transition:border-color .2s;}
+.api-input:focus{border-color:var(--secondary);}
+.api-note{font-size:11.5px;color:var(--gray);margin-top:8px;}
+.api-note.ok{color:var(--teal);}.api-note.err{color:var(--accent);}
+
+.inputs-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:22px;}
+@media(max-width:760px){.inputs-grid{grid-template-columns:1fr;}}
+label{display:block;font-size:12px;font-weight:600;color:var(--primary);margin-bottom:7px;letter-spacing:.3px;text-transform:uppercase;}
+label span{text-transform:none;font-weight:300;color:var(--gray);}
+textarea{width:100%;height:190px;padding:12px 15px;border:2px solid #e8e0f8;border-radius:9px;font-family:'Poppins',sans-serif;font-size:13px;line-height:1.7;resize:vertical;outline:none;transition:border-color .2s;}
+textarea:focus{border-color:var(--secondary);}
+.txt-count{font-size:11px;color:var(--gray);text-align:right;margin-top:5px;}
+.settings-row{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;}
+.sg{display:flex;flex-direction:column;gap:7px;}
+select,input[type="time"]{padding:11px 14px;border:2px solid #e8e0f8;border-radius:9px;font-family:'Poppins',sans-serif;font-size:13px;outline:none;background:white;cursor:pointer;transition:border-color .2s;color:var(--black);}
+select:focus,input[type="time"]:focus{border-color:var(--secondary);}
+
+.btn{padding:12px 26px;border:none;border-radius:9px;font-family:'Poppins',sans-serif;font-weight:600;font-size:13.5px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px;}
+.btn-primary{background:var(--secondary);color:white;}
+.btn-primary:hover{background:var(--primary);}
+.btn-primary:disabled{background:var(--gray);cursor:not-allowed;}
+.btn-accent{background:var(--accent);color:white;}
+.btn-accent:hover{filter:brightness(.92);}
+.btn-accent:disabled{background:var(--gray);cursor:not-allowed;}
+.btn-ghost{background:transparent;border:2px solid var(--secondary);color:var(--secondary);}
+.btn-ghost:hover{background:var(--light-bg);}
+.act-row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;}
+
+.prog-wrap{display:none;margin-top:22px;}
+.prog-label{font-size:13px;color:var(--primary);font-weight:600;margin-bottom:8px;}
+.prog-bg{height:7px;background:#e8e0f8;border-radius:4px;overflow:hidden;}
+.prog-bar{height:100%;background:linear-gradient(90deg,var(--secondary),var(--accent));width:0%;transition:width .4s;border-radius:4px;}
+.prog-detail{font-size:11.5px;color:var(--gray);margin-top:6px;}
+
+#map{height:420px;border-radius:10px;overflow:hidden;background:#ede8f8;display:flex;align-items:center;justify-content:center;color:var(--gray);font-size:13px;}
+.map-leg{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.93);border-radius:10px;padding:12px 16px;font-size:12px;box-shadow:0 2px 12px rgba(0,0,0,.12);display:none;}
+.leg{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.leg:last-child{margin-bottom:0;}
+.dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+.dot.orig{background:white;border:2.5px solid var(--primary);}
+.dot.dest{background:var(--secondary);}
+#map-wrap{position:relative;}
+
+.tabs{display:flex;gap:2px;margin-bottom:22px;border-bottom:2px solid var(--light-bg);}
+.tab{padding:10px 20px;background:transparent;border:none;font-family:'Poppins',sans-serif;font-weight:600;font-size:13px;color:var(--gray);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;}
+.tab.on{color:var(--secondary);border-bottom-color:var(--secondary);}
+.tab-panel{display:none;overflow-x:auto;}
+.tab-panel.on{display:block;}
+
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px;min-width:600px;}
+.tbl th{background:var(--primary);color:white;padding:10px 14px;text-align:center;font-weight:600;white-space:nowrap;}
+.tbl th.left{text-align:left;}
+.tbl td{padding:9px 14px;border-bottom:1px solid #f0ecfc;white-space:nowrap;}
+.tbl td.addr{text-align:left;max-width:280px;overflow:hidden;text-overflow:ellipsis;}
+.tbl tr.avg-row td{background:var(--light-bg)!important;font-weight:600;color:var(--primary);}
+.tbl tr:nth-child(even) td{background:#fafafa;}
+.tbl .sub-th{background:var(--secondary);font-size:11px;padding:6px 14px;}
+.tbl .na{color:var(--gray);font-style:italic;}
+
+.sum-sec-hdr{background:var(--secondary);color:white;padding:10px 16px;border-radius:8px;font-weight:600;font-size:13px;margin:20px 0 12px;}
+.sum-tbl{width:100%;border-collapse:collapse;font-size:12.5px;min-width:700px;}
+.sum-tbl th{background:var(--primary);color:white;padding:11px 15px;font-weight:600;text-align:center;white-space:nowrap;}
+.sum-tbl th:first-child,.sum-tbl th:nth-child(2){text-align:left;}
+.sum-tbl td{padding:10px 15px;border-bottom:1px solid #f0ecfc;text-align:center;white-space:nowrap;}
+.sum-tbl td:first-child,.sum-tbl td:nth-child(2){text-align:left;}
+.sum-tbl tr:nth-child(even) td{background:#fafafa;}
+.sum-tbl .base-row td{background:#fff9ff!important;font-weight:600;}
+.rank-1 td{background:linear-gradient(90deg,#f0fdf4,#fafafa)!important;}
+.rank-badge{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;font-weight:700;font-size:12px;background:var(--light-bg);color:var(--primary);}
+.rank-badge.r1{background:var(--secondary);color:white;}
+.delta-pos{color:#c62828;}.delta-neg{color:#2e7d32;}.delta-zero{color:var(--gray);}
+
+footer{text-align:center;padding:20px;color:var(--gray);font-size:11.5px;}
+</style>
+</head>
+<body>
+
+<!-- ══ PASSWORD ════════════════════════════════════ -->
+<div id="pw-screen">
+  <div class="pw-card">
+    <div class="pw-logo">i<span>·</span>O</div>
+    <div class="pw-tagline">Partners · Real Estate Experts</div>
+    <div class="pw-title">Commute Analysis Tool</div>
+    <div class="pw-sub">Enter your access password to continue</div>
+    <input type="password" class="pw-input" id="pw-in" placeholder="Password"
+      onkeydown="if(event.key==='Enter')checkPw()">
+    <button class="pw-btn" onclick="checkPw()">Enter Tool →</button>
+    <div class="pw-error" id="pw-err">Incorrect password. Please try again.</div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ════════════════════════════════════ -->
+<div id="main-app">
+  <header>
+    <div class="hdr-brand">
+      <div class="hdr-mark">i<span>·</span>O</div>
+      <div>
+        <div class="hdr-name">iO Partners</div>
+        <div class="hdr-sub">We work smarter to make real estate easier.</div>
+      </div>
+    </div>
+    <div class="hdr-tool">Commute Analysis Tool</div>
+  </header>
+
+  <main>
+    <!-- 1: API KEY -->
+    <div class="card">
+      <div class="card-title"><div class="step" id="s1">1</div>Google Maps API Key</div>
+      <div class="api-row">
+        <input type="password" class="api-input" id="api-in" placeholder="Paste your Google Maps API key here">
+        <button class="btn btn-primary" onclick="saveKey()">Save &amp; Load Map</button>
+        <button class="btn btn-ghost" onclick="toggleVis()" id="vis-btn">Show</button>
+      </div>
+      <div class="api-note" id="api-note">
+        Stored locally in your browser only — never sent to any external server.
+        Required APIs: <strong>Maps JavaScript API · Distance Matrix API · Geocoding API</strong>
+      </div>
+    </div>
+
+    <!-- 2: ADDRESSES -->
+    <div class="card">
+      <div class="card-title"><div class="step" id="s2">2</div>Enter Addresses &amp; Settings</div>
+      <div class="inputs-grid">
+        <div>
+          <label>Origins <span>— one address per line</span></label>
+          <textarea id="orig-in" placeholder="Václavské náměstí 1, Praha 1&#10;Náměstí Míru 3, Praha 2"></textarea>
+          <div class="txt-count" id="orig-cnt">0 addresses</div>
+        </div>
+        <div>
+          <label>Destinations <span>— one address per line</span></label>
+          <textarea id="dest-in" placeholder="Na Příkopě 14, Praha 1&#10;Pařížská 8, Praha 1"></textarea>
+          <div class="txt-count" id="dest-cnt">0 addresses</div>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="sg">
+          <label>Day of Week</label>
+          <select id="day-sel">
+            <option value="1">Monday</option><option value="2">Tuesday</option>
+            <option value="3">Wednesday</option><option value="4">Thursday</option>
+            <option value="5">Friday</option><option value="6">Saturday</option>
+            <option value="0">Sunday</option>
+          </select>
+        </div>
+        <div class="sg">
+          <label>Arrival Time</label>
+          <input type="time" id="time-in" value="09:00">
+        </div>
+        <div class="sg">
+          <label>Analysis Mode</label>
+          <select id="mode-sel">
+            <option value="both">Both (Driving + Transit)</option>
+            <option value="driving">Driving Only</option>
+            <option value="transit">Transit Only</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding:10px 14px;background:#FFF9F0;border-left:3px solid #FF7145;border-radius:6px;font-size:12px;color:#9BA0A5;">
+        <strong style="color:#FF7145">Note:</strong> Google Maps supports arrival time only for <strong>Public Transit</strong>.
+        For <strong>Driving</strong>, the same time is used as departure time (result is an approximation).
+      </div>
+    </div>
+
+    <!-- 3: MAP -->
+    <div class="card">
+      <div class="card-title">
+        <div class="step" id="s3">3</div>Map Preview
+        <span style="font-size:12px;font-weight:300;color:var(--gray)">— markers appear as you type</span>
+      </div>
+      <div id="map-wrap">
+        <div id="map"><span>Map loads after saving your API key in Step 1</span></div>
+        <div class="map-leg" id="map-leg">
+          <div class="leg"><div class="dot orig"></div><span>Origins</span></div>
+          <div class="leg"><div class="dot dest"></div><span>Destinations</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4: ANALYZE -->
+    <div class="card">
+      <div class="card-title"><div class="step" id="s4">4</div>Run Analysis &amp; Export</div>
+      <div class="act-row">
+        <button class="btn btn-primary" id="run-btn" onclick="runAnalysis()" disabled>▶ &nbsp;Analyze Commute Times</button>
+        <button class="btn btn-accent" id="dl-btn" onclick="downloadExcel()" disabled>↓ &nbsp;Download Excel Report</button>
+        <button class="btn btn-ghost" onclick="clearAll()">✕ &nbsp;Clear All</button>
+      </div>
+      <div class="prog-wrap" id="prog-wrap">
+        <div class="prog-label" id="prog-lbl">Initializing…</div>
+        <div class="prog-bg"><div class="prog-bar" id="prog-bar"></div></div>
+        <div class="prog-detail" id="prog-det"></div>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="card" id="res-card" style="display:none">
+      <div class="card-title"><div class="step done">✓</div>Results Preview</div>
+      <div class="tabs">
+        <button class="tab on" onclick="switchTab('driving',this)">🚗 Driving</button>
+        <button class="tab" onclick="switchTab('transit',this)">🚌 Public Transit</button>
+        <button class="tab" onclick="switchTab('summary',this)">📊 Summary</button>
+      </div>
+      <div id="tab-driving" class="tab-panel on"></div>
+      <div id="tab-transit" class="tab-panel"></div>
+      <div id="tab-summary" class="tab-panel"></div>
+    </div>
+  </main>
+  <footer>© iO Partners · Commute Analysis Tool · Data sourced from Google Maps Distance Matrix API</footer>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// CONFIG & STATE
+// ═══════════════════════════════════════════════
+const PASSWORD = 'iO Partners';
+const KEY_STORE = 'io_maps_api_key';
+
+let apiKey = '';
+let mapsReady = false;
+let gMap = null;
+let gMarkers = [];
+let mapUpdateTimer = null;
+let analysisResults = null;
+
+// ═══════════════════════════════════════════════
+// PASSWORD
+// ═══════════════════════════════════════════════
+function checkPw() {
+  if (document.getElementById('pw-in').value === PASSWORD) {
+    document.getElementById('pw-screen').style.display = 'none';
+    document.getElementById('main-app').style.display = 'block';
+    initCounts();
+    const saved = localStorage.getItem(KEY_STORE);
+    if (saved) { document.getElementById('api-in').value = saved; apiKey = saved; loadMaps(saved); }
+  } else {
+    document.getElementById('pw-err').style.display = 'block';
+    document.getElementById('pw-in').value = '';
+  }
+}
+
+// ═══════════════════════════════════════════════
+// API KEY
+// ═══════════════════════════════════════════════
+function saveKey() {
+  const k = document.getElementById('api-in').value.trim();
+  if (!k) { setNote('Please enter an API key.', 'err'); return; }
+  apiKey = k; localStorage.setItem(KEY_STORE, k);
+  setNote('Key saved! Loading Google Maps…', '');
+  loadMaps(k);
+}
+function toggleVis() {
+  const i = document.getElementById('api-in'), b = document.getElementById('vis-btn');
+  i.type = i.type === 'password' ? 'text' : 'password';
+  b.textContent = i.type === 'password' ? 'Show' : 'Hide';
+}
+function setNote(m, cls) {
+  const e = document.getElementById('api-note');
+  e.textContent = m; e.className = 'api-note' + (cls ? ' ' + cls : '');
+}
+
+// ═══════════════════════════════════════════════
+// GOOGLE MAPS
+// ═══════════════════════════════════════════════
+function loadMaps(key) {
+  if (document.getElementById('gm-scr')) { if (mapsReady) initMap(); return; }
+  const s = document.createElement('script');
+  s.id = 'gm-scr';
+  s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&callback=initMap`;
+  s.async = true;
+  s.onerror = () => setNote('Failed to load Google Maps. Check your API key.', 'err');
+  document.head.appendChild(s);
+}
+
+window.initMap = function () {
+  mapsReady = true;
+  setNote('✓ Google Maps loaded successfully. You can now run the analysis.', 'ok');
+  document.getElementById('run-btn').disabled = false;
+  document.getElementById('s1').className = 'step done';
+  document.getElementById('map-leg').style.display = 'block';
+
+  gMap = new google.maps.Map(document.getElementById('map'), {
+    center: { lat: 50.0755, lng: 14.4378 }, zoom: 11,
+    styles: [
+      { featureType:'all', elementType:'geometry.fill', stylers:[{color:'#f3effe'}] },
+      { featureType:'water', elementType:'geometry', stylers:[{color:'#c8b8f0'}] },
+      { featureType:'road', elementType:'geometry', stylers:[{color:'#ffffff'}] },
+      { featureType:'road', elementType:'geometry.stroke', stylers:[{color:'#e0d8f8'}] },
+      { featureType:'poi', stylers:[{visibility:'off'}] },
+      { featureType:'transit', elementType:'labels', stylers:[{visibility:'off'}] },
+    ]
+  });
+
+  document.getElementById('orig-in').addEventListener('input', scheduleMapUpd);
+  document.getElementById('dest-in').addEventListener('input', scheduleMapUpd);
+  scheduleMapUpd();
+};
+
+function scheduleMapUpd() { clearTimeout(mapUpdateTimer); mapUpdateTimer = setTimeout(refreshMarkers, 1200); }
+
+function clearMarkers() { gMarkers.forEach(m => m.setMap(null)); gMarkers = []; }
+
+function refreshMarkers() {
+  if (!mapsReady || !gMap) return;
+  clearMarkers();
+  const origs = parseAddrs('orig-in'), dests = parseAddrs('dest-in');
+  const total = origs.length + dests.length;
+  if (!total) return;
+  const gc = new google.maps.Geocoder();
+  const bounds = new google.maps.LatLngBounds();
+  let done = 0;
+
+  function place(addr, isOrig) {
+    gc.geocode({ address: addr }, (res, st) => {
+      done++;
+      if (st === 'OK') {
+        const pos = res[0].geometry.location;
+        bounds.extend(pos);
+        const m = new google.maps.Marker({
+          position: pos, map: gMap, title: addr,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE, scale: 9,
+            fillColor: isOrig ? '#FFFFFF' : '#6B46E1', fillOpacity: 1,
+            strokeColor: '#372473', strokeWeight: 2.5,
+          }
+        });
+        const iw = new google.maps.InfoWindow({
+          content: `<div style="font-family:Poppins,sans-serif;padding:6px 2px;font-size:12px;">
+            <b style="color:${isOrig?'#372473':'#6B46E1'}">${isOrig?'⬤ Origin':'⬤ Destination'}</b><br>${addr}</div>`
+        });
+        m.addListener('click', () => iw.open(gMap, m));
+        gMarkers.push(m);
+      }
+      if (done === total && gMarkers.length) gMap.fitBounds(bounds);
+    });
+  }
+  origs.forEach(a => place(a, true));
+  dests.forEach(a => place(a, false));
+}
+
+// ═══════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════
+function parseAddrs(id) {
+  return document.getElementById(id).value.split('\n').map(a=>a.trim()).filter(Boolean);
+}
+function initCounts() {
+  [['orig-in','orig-cnt'],['dest-in','dest-cnt']].forEach(([ta,cnt]) => {
+    document.getElementById(ta).addEventListener('input', () => {
+      const n = parseAddrs(ta).length;
+      document.getElementById(cnt).textContent = `${n} address${n!==1?'es':''}`;
+    });
+  });
+}
+function avg(arr) {
+  const v = arr.filter(x => x !== null && x !== undefined && !isNaN(x));
+  return v.length ? v.reduce((a,b)=>a+b)/v.length : null;
+}
+function shorten(s, max) { return s && s.length > max ? s.slice(0, max-1)+'…' : (s||''); }
+
+function calcArrivalTime() {
+  const day = parseInt(document.getElementById('day-sel').value);
+  const [h,m] = document.getElementById('time-in').value.split(':').map(Number);
+  const d = new Date(); d.setHours(h,m,0,0);
+  let diff = (day - d.getDay() + 7) % 7;
+  if (diff === 0 && d <= new Date()) diff = 7;
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+// ═══════════════════════════════════════════════
+// DISTANCE MATRIX (with batching)
+// ═══════════════════════════════════════════════
+async function callDM(ob, db, mode, arrivalTime) {
+  return new Promise((resolve, reject) => {
+    const svc = new google.maps.DistanceMatrixService();
+    const opts = {
+      origins: ob, destinations: db,
+      travelMode: mode === 'DRIVING' ? google.maps.TravelMode.DRIVING : google.maps.TravelMode.TRANSIT,
+      unitSystem: google.maps.UnitSystem.METRIC,
+    };
+    if (mode === 'DRIVING') {
+      // Google Maps API does not support arrivalTime for driving — using as departureTime approximation
+      opts.drivingOptions = { departureTime: arrivalTime, trafficModel: google.maps.TrafficModel.BEST_GUESS };
+    } else {
+      opts.transitOptions = { arrivalTime: arrivalTime };
+    }
+    svc.getDistanceMatrix(opts, (resp, st) => st === 'OK' ? resolve(resp) : reject(new Error('DM: '+st)));
+  });
+}
+
+async function batchDM(origins, destinations, mode, arrivalTime, onProg) {
+  const MO = 10, MD = 10;
+  const matrix = Array.from({length:origins.length}, () => Array(destinations.length).fill(null));
+  // Always keep user-typed addresses exactly as entered.
+  // resp.originAddresses / resp.destinationAddresses are Google-reformatted (EN locale,
+  // number-first order, sometimes incomplete) and garble the original input.
+  const origAddr = origins.slice();
+  const destAddr = destinations.slice();
+  const totalB = Math.ceil(origins.length/MO) * Math.ceil(destinations.length/MD);
+  let done = 0;
+
+  for (let i = 0; i < origins.length; i += MO) {
+    const ob = origins.slice(i, i+MO);
+    for (let j = 0; j < destinations.length; j += MD) {
+      const db = destinations.slice(j, j+MD);
+      const resp = await callDM(ob, db, mode, arrivalTime);
+      ob.forEach((_,ri) => {
+        db.forEach((_,ci) => {
+          const el = resp.rows[ri].elements[ci];
+          matrix[i+ri][j+ci] = el.status === 'OK' ? {
+            distKm: Math.round(el.distance.value/100)/10,
+            durMin: Math.round(el.duration.value/60)
+          } : null;
+        });
+      });
+      done++; if (onProg) onProg(done, totalB);
+      await new Promise(r => setTimeout(r, 250));
+    }
+  }
+  return { matrix, origAddr, destAddr };
+}
+
+// ═══════════════════════════════════════════════
+// GEOCODING FOR MAP
+// ═══════════════════════════════════════════════
+async function geocodeAll(addresses) {
+  const gc = new google.maps.Geocoder();
+  const result = {};
+  for (const addr of addresses) {
+    if (!addr || result[addr]) continue;
+    await new Promise(r => {
+      gc.geocode({ address: addr }, (res, st) => {
+        if (st === 'OK') result[addr] = { lat: res[0].geometry.location.lat(), lng: res[0].geometry.location.lng() };
+        r();
+      });
+    });
+    await new Promise(r => setTimeout(r, 60));
+  }
+  return result;
+}
+
+// ═══════════════════════════════════════════════
+// PROGRESS UI
+// ═══════════════════════════════════════════════
+function showProg(label, pct, detail) {
+  document.getElementById('prog-wrap').style.display = 'block';
+  document.getElementById('prog-lbl').textContent = label;
+  document.getElementById('prog-bar').style.width = pct+'%';
+  document.getElementById('prog-det').textContent = detail||'';
+}
+function hideProg() { document.getElementById('prog-wrap').style.display = 'none'; }
+
+// ═══════════════════════════════════════════════
+// MAIN ANALYSIS
+// ═══════════════════════════════════════════════
+async function runAnalysis() {
+  const origins = parseAddrs('orig-in'), destinations = parseAddrs('dest-in');
+  const mode = document.getElementById('mode-sel').value;
+  if (!origins.length || !destinations.length) { alert('Enter at least one origin and one destination.'); return; }
+  if (!mapsReady) { alert('Save your Google Maps API key first.'); return; }
+
+  const arrivalTime = calcArrivalTime();
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dayNum = parseInt(document.getElementById('day-sel').value);
+  const timeStr = document.getElementById('time-in').value;
+
+  document.getElementById('run-btn').disabled = true;
+  document.getElementById('dl-btn').disabled = true;
+  document.getElementById('res-card').style.display = 'none';
+  analysisResults = null;
+
+  let drivingRes = null, transitRes = null;
+
+  try {
+    if (mode === 'both' || mode === 'driving') {
+      showProg('Fetching driving times…', 5, '');
+      drivingRes = await batchDM(origins, destinations, 'DRIVING', arrivalTime, (d,t) => {
+        showProg('Fetching driving times…', Math.round(d/t*45)+5, `Batch ${d} of ${t}`);
+      });
+    }
+    if (mode === 'both' || mode === 'transit') {
+      const sp = mode==='both'?50:5;
+      showProg('Fetching transit times…', sp, '');
+      transitRes = await batchDM(origins, destinations, 'TRANSIT', arrivalTime, (d,t) => {
+        const pct = mode==='both' ? Math.round(d/t*40)+50 : Math.round(d/t*85)+5;
+        showProg('Fetching transit times…', pct, `Batch ${d} of ${t}`);
+      });
+    }
+
+    const baseResult = drivingRes || transitRes;
+    const allAddrs = [...baseResult.origAddr, ...baseResult.destAddr];
+
+    showProg('Geocoding addresses for map…', 92, '');
+    const coords = await geocodeAll(allAddrs);
+
+    showProg('Processing results…', 98, '');
+    analysisResults = {
+      origins, destinations,
+      origAddr: baseResult.origAddr,
+      destAddr: (drivingRes || transitRes).destAddr,
+      driving: drivingRes?.matrix || null,
+      transit: transitRes?.matrix || null,
+      coords,
+      settings: { day: dayNames[dayNum], time: timeStr, mode }
+    };
+
+    renderPreview();
+    showProg('Done!', 100, `Complete — ${origins.length} origins × ${destinations.length} destinations`);
+    setTimeout(hideProg, 1800);
+    document.getElementById('res-card').style.display = 'block';
+    document.getElementById('dl-btn').disabled = false;
+
+  } catch(err) {
+    hideProg(); alert('Error: ' + err.message); console.error(err);
+  }
+  document.getElementById('run-btn').disabled = false;
+}
+
+// ═══════════════════════════════════════════════
+// RESULTS PREVIEW
+// ═══════════════════════════════════════════════
+function switchTab(id, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('on'));
+  if(el) el.classList.add('on');
+  document.getElementById('tab-'+id).classList.add('on');
+}
+
+function renderMatrixHTML(matrix, origAddr, destAddr) {
+  if (!matrix) return '<p style="color:var(--gray);padding:16px">No data for this mode.</p>';
+  const nD = destAddr.length;
+  let h = `<table class="tbl"><tr><th class="left" rowspan="2">Origin</th>`;
+  destAddr.forEach(d => h += `<th colspan="2">${shorten(d,35)}</th>`);
+  h += '</tr><tr>';
+  destAddr.forEach(()=> h += '<th class="sub-th">km</th><th class="sub-th">min</th>');
+  h += '</tr><tr class="avg-row"><td class="addr">Average</td>';
+  for(let j=0;j<nD;j++){
+    const dk = avg(matrix.map(r=>r[j]?.distKm??null));
+    const dm = avg(matrix.map(r=>r[j]?.durMin??null));
+    h += `<td style="text-align:right">${dk!==null?dk.toFixed(1):'—'}</td><td style="text-align:right">${dm!==null?Math.round(dm):'—'}</td>`;
+  }
+  h += '</tr>';
+  origAddr.forEach((addr,i) => {
+    h += `<tr><td class="addr" title="${addr}">${shorten(addr,50)}</td>`;
+    for(let j=0;j<nD;j++){
+      const el=matrix[i][j];
+      if(el) h += `<td style="text-align:right">${el.distKm.toFixed(1)}</td><td style="text-align:right">${el.durMin}</td>`;
+      else h += `<td class="na" colspan="2" style="text-align:center">N/A</td>`;
+    }
+    h += '</tr>';
+  });
+  return h + '</table>';
+}
+
+function buildSummaryRows(matrix, destAddr) {
+  if (!matrix) return null;
+  const rows = destAddr.map((dest, j) => {
+    const vals = matrix.map(r => r[j]?.durMin ?? null).filter(v => v !== null);
+    const avgT = vals.length ? vals.reduce((a,b)=>a+b)/vals.length : null;
+    return { dest, avgT, j };
+  });
+  const byAvg = [...rows].filter(r=>r.avgT!==null).sort((a,b)=>a.avgT-b.avgT);
+  const rankMap = {}; byAvg.forEach((r,i) => rankMap[r.j] = i+1);
+  rows.forEach(r => r.rank = rankMap[r.j] ?? null);
+  return rows;
+}
+
+function renderSummaryHTML(driving, transit, origAddr, destAddr) {
+  let html = '';
+  function renderSection(rows, label) {
+    if (!rows) return '';
+    const baseline = rows[0]?.avgT ?? null;
+    let t = `<div class="sum-sec-hdr">${label}</div>
+      <table class="sum-tbl">
+      <tr><th style="width:36px">#</th><th>Destination</th>
+      <th>Avg Time (min)</th><th style="width:60px">Rank</th>
+      <th>vs Current bldg (min)</th><th>vs Current bldg (%)</th></tr>`;
+    rows.forEach((r, i) => {
+      const isCurrent = i === 0;
+      const delta = (baseline !== null && r.avgT !== null && !isCurrent) ? Math.round(r.avgT - baseline) : null;
+      const pct = (baseline !== null && baseline > 0 && r.avgT !== null && !isCurrent) ? Math.round((r.avgT-baseline)/baseline*100) : null;
+      const dCls = delta===null?'delta-zero':delta>0?'delta-pos':'delta-neg';
+      const dStr = delta===null ? '—' : (delta>0?'+':'')+delta;
+      const pStr = pct===null ? '—' : (pct>0?'+':'')+pct+'%';
+      const rankTxt = r.rank===1 ? '★ 1' : (r.rank ? '#'+r.rank : '—');
+      t += `<tr class="${isCurrent?'base-row':''}${r.rank===1?' rank-1':''}">
+        <td style="text-align:center;color:var(--gray)">${i+1}</td>
+        <td>${shorten(r.dest,55)}${isCurrent?' <small style="color:var(--secondary);font-weight:600">(Current building)</small>':''}</td>
+        <td style="text-align:right;font-weight:600">${r.avgT!==null?Math.round(r.avgT):'N/A'}</td>
+        <td style="text-align:center"><span class="rank-badge${r.rank===1?' r1':''}">${rankTxt}</span></td>
+        <td style="text-align:right" class="${dCls}">${isCurrent?'—':dStr}</td>
+        <td style="text-align:right" class="${dCls}">${isCurrent?'—':pStr}</td>
+      </tr>`;
+    });
+    return t + '</table>';
+  }
+
+  const dRows = buildSummaryRows(driving, destAddr);
+  const tRows = buildSummaryRows(transit, destAddr);
+  html += renderSection(dRows, '🚗 &nbsp;Driving — Average Commute Time per Destination');
+  html += renderSection(tRows, '🚌 &nbsp;Public Transit — Average Commute Time per Destination');
+  return html;
+}
+
+function renderPreview() {
+  const { origAddr, destAddr, driving, transit } = analysisResults;
+  document.getElementById('tab-driving').innerHTML = renderMatrixHTML(driving, origAddr, destAddr);
+  document.getElementById('tab-transit').innerHTML = renderMatrixHTML(transit, origAddr, destAddr);
+  document.getElementById('tab-summary').innerHTML = renderSummaryHTML(driving, transit, origAddr, destAddr);
+}
+
+// ═══════════════════════════════════════════════
+// CANVAS MAP DRAWING
+// ═══════════════════════════════════════════════
+function drawMapCanvas(origAddr, destAddr, coords) {
+  const W = 1600, H = 900;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // Gather points
+  const origPts = origAddr.map(a => coords[a] ? {...coords[a], label:a, idx:0} : null);
+  const destPts  = destAddr.map(a => coords[a] ? {...coords[a], label:a, idx:0} : null);
+  const all = [...origPts, ...destPts].filter(Boolean);
+
+  if (!all.length) {
+    ctx.fillStyle = '#F0ECFC'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = '#9BA0A5'; ctx.font = '18px Arial';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('Geocoding data not available', W/2, H/2);
+    return canvas.toDataURL('image/png').split(',')[1];
+  }
+
+  // ── Bounds + Mercator correction ─────────────
+  const lats = all.map(c=>c.lat), lngs = all.map(c=>c.lng);
+  let minLat=Math.min(...lats), maxLat=Math.max(...lats);
+  let minLng=Math.min(...lngs), maxLng=Math.max(...lngs);
+  const cLat=(minLat+maxLat)/2;
+
+  // Mercator: 1° lng = cos(lat)° lat in ground distance
+  const latCos = Math.cos(cLat * Math.PI / 180);
+
+  // Add generous padding
+  const latSp = (maxLat-minLat)||0.012, lngSp = (maxLng-minLng)||0.012;
+  minLat -= latSp*0.3; maxLat += latSp*0.3;
+  minLng -= lngSp*0.3; maxLng += lngSp*0.3;
+
+  const PL=70, PR=70, PT=65, PB=80;
+  const mW=W-PL-PR, mH=H-PT-PB;
+
+  // Scale: correct lng by latCos so 1°lng = 1°lat*latCos on screen
+  const sLat = mH / (maxLat-minLat);
+  const sLng = mW / ((maxLng-minLng) / latCos); // corrected
+  const scl  = Math.min(sLat, sLng);
+
+  const cLng = (minLng+maxLng)/2;
+  function xy(lat, lng) {
+    return {
+      x: W/2 + (lng-cLng)/latCos * scl,
+      y: PT + mH/2 - (lat-(minLat+maxLat)/2) * scl
+    };
+  }
+
+  // ── Background ───────────────────────────────
+  ctx.fillStyle = '#F5F2FC'; ctx.fillRect(0,0,W,H);
+
+  // Subtle grid
+  ctx.strokeStyle='rgba(107,70,225,0.07)'; ctx.lineWidth=1;
+  const gStep = 0.005;
+  const g0Lat=Math.ceil(minLat/gStep)*gStep, g0Lng=Math.ceil(minLng/gStep)*gStep;
+  for (let la=g0Lat; la<=maxLat; la+=gStep) {
+    const {y} = xy(la, cLng);
+    ctx.beginPath(); ctx.moveTo(PL, y); ctx.lineTo(W-PR, y); ctx.stroke();
+  }
+  for (let ln=g0Lng; ln<=maxLng; ln+=gStep) {
+    const {x} = xy(cLat, ln);
+    ctx.beginPath(); ctx.moveTo(x, PT); ctx.lineTo(x, H-PB); ctx.stroke();
+  }
+
+  // Border
+  ctx.strokeStyle='rgba(107,70,225,0.15)'; ctx.lineWidth=1.5;
+  ctx.strokeRect(PL, PT, mW, mH);
+
+  // ── Connection lines (dashed) ────────────────
+  ctx.setLineDash([5,5]);
+  origPts.forEach(o => {
+    if (!o) return;
+    destPts.forEach(d => {
+      if (!d) return;
+      const a=xy(o.lat,o.lng), b=xy(d.lat,d.lng);
+      const g=ctx.createLinearGradient(a.x,a.y,b.x,b.y);
+      g.addColorStop(0,'rgba(55,36,115,0.08)'); g.addColorStop(1,'rgba(107,70,225,0.14)');
+      ctx.strokeStyle=g; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    });
+  });
+  ctx.setLineDash([]);
+
+  // ── Helper: rounded rect ─────────────────────
+  function rrect(x,y,w,h,r) {
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+    ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+    ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+    ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath();
+  }
+
+  // ── Destination markers ──────────────────────
+  destPts.forEach((pt,i) => {
+    if (!pt) return;
+    const {x,y}=xy(pt.lat,pt.lng);
+    // Halo
+    const hl=ctx.createRadialGradient(x,y,0,x,y,30);
+    hl.addColorStop(0,'rgba(107,70,225,0.18)'); hl.addColorStop(1,'rgba(107,70,225,0)');
+    ctx.fillStyle=hl; ctx.beginPath(); ctx.arc(x,y,30,0,Math.PI*2); ctx.fill();
+    // Shadow
+    ctx.shadowColor='rgba(55,36,115,0.35)'; ctx.shadowBlur=12; ctx.shadowOffsetY=4;
+    // Pin body
+    ctx.beginPath(); ctx.arc(x,y,18,0,Math.PI*2);
+    ctx.fillStyle='#6B46E1'; ctx.fill();
+    ctx.strokeStyle='#372473'; ctx.lineWidth=2.5; ctx.stroke();
+    ctx.shadowColor='transparent'; ctx.shadowBlur=0;
+    // Label inside circle
+    ctx.fillStyle='#FFFFFF'; ctx.font='bold 12px Arial';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(`D${i+1}`,x,y);
+    // Address callout
+    ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+    const lbl=shorten(destAddr[i]||'',36);
+    ctx.font='11px Arial';
+    const lw=ctx.measureText(lbl).width;
+    const lx=x+26, ly=y-8, lh=20;
+    rrect(lx-3, ly-3, lw+14, lh+6, 4);
+    ctx.fillStyle='rgba(255,255,255,0.92)'; ctx.fill();
+    ctx.strokeStyle='rgba(107,70,225,0.25)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.fillStyle='#372473'; ctx.fillText(lbl, lx+4, ly+lh-5);
+  });
+
+  // ── Origin markers ───────────────────────────
+  origPts.forEach((pt,i) => {
+    if (!pt) return;
+    const {x,y}=xy(pt.lat,pt.lng);
+    ctx.shadowColor='rgba(55,36,115,0.2)'; ctx.shadowBlur=8; ctx.shadowOffsetY=2;
+    ctx.beginPath(); ctx.arc(x,y,12,0,Math.PI*2);
+    ctx.fillStyle='#FFFFFF'; ctx.fill();
+    ctx.strokeStyle='#372473'; ctx.lineWidth=2.5; ctx.stroke();
+    ctx.shadowColor='transparent'; ctx.shadowBlur=0;
+    ctx.fillStyle='#372473'; ctx.font='bold 9px Arial';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(String(i+1),x,y);
+  });
+
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+
+  // ── Title bar ────────────────────────────────
+  const tbH=PT-4;
+  const tbg=ctx.createLinearGradient(0,0,W,tbH);
+  tbg.addColorStop(0,'#1a0f4d'); tbg.addColorStop(1,'#6B46E1');
+  ctx.fillStyle=tbg; ctx.fillRect(0,0,W,tbH);
+  ctx.fillStyle='#FFFFFF'; ctx.font='bold 20px Arial';
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.fillText('iO Partners  ·  Commute Analysis — Geographic Overview',20,tbH/2);
+  ctx.font='13px Arial'; ctx.fillStyle='rgba(255,255,255,0.6)';
+  ctx.textAlign='right';
+  ctx.fillText(new Date().toLocaleDateString('en-GB'),W-20,tbH/2);
+
+  // ── Compass rose (N) ─────────────────────────
+  const cx=W-PL-28, cy=H-PB-28, cr=18;
+  ctx.fillStyle='rgba(255,255,255,0.88)';
+  ctx.beginPath(); ctx.arc(cx,cy,cr+4,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(107,70,225,0.3)'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.fillStyle='#6B46E1'; ctx.beginPath();
+  ctx.moveTo(cx,cy-cr); ctx.lineTo(cx-7,cy+4); ctx.lineTo(cx+7,cy+4); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='rgba(55,36,115,0.3)'; ctx.beginPath();
+  ctx.moveTo(cx,cy+cr); ctx.lineTo(cx-7,cy-4); ctx.lineTo(cx+7,cy-4); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#372473'; ctx.font='bold 11px Arial';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('N',cx,cy-cr-9);
+
+  // ── Legend box ───────────────────────────────
+  const lx=PL+8, ly=H-PB-88, lw2=210, lh=82;
+  rrect(lx,ly,lw2,lh,8);
+  ctx.fillStyle='rgba(255,255,255,0.92)'; ctx.fill();
+  ctx.strokeStyle='rgba(107,70,225,0.25)'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.fillStyle='#372473'; ctx.font='bold 12px Arial';
+  ctx.fillText('Legend',lx+12,ly+20);
+  // Origin
+  ctx.shadowColor='rgba(55,36,115,0.15)'; ctx.shadowBlur=4;
+  ctx.beginPath(); ctx.arc(lx+22,ly+40,10,0,Math.PI*2);
+  ctx.fillStyle='#FFFFFF'; ctx.fill(); ctx.strokeStyle='#372473'; ctx.lineWidth=2; ctx.stroke();
+  ctx.shadowColor='transparent'; ctx.shadowBlur=0;
+  ctx.fillStyle='#372473'; ctx.font='10px Arial';
+  ctx.fillText(`Origins (${origAddr.length} addresses)`,lx+38,ly+44);
+  // Destination
+  ctx.shadowColor='rgba(55,36,115,0.25)'; ctx.shadowBlur=5;
+  ctx.beginPath(); ctx.arc(lx+22,ly+65,10,0,Math.PI*2);
+  ctx.fillStyle='#6B46E1'; ctx.fill(); ctx.strokeStyle='#372473'; ctx.lineWidth=2; ctx.stroke();
+  ctx.shadowColor='transparent'; ctx.shadowBlur=0;
+  ctx.fillStyle='#FFFFFF'; ctx.font='bold 8px Arial';
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('D',lx+22,ly+65);
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.fillStyle='#372473'; ctx.font='10px Arial';
+  ctx.fillText(`Destinations (${destAddr.length} locations)`,lx+38,ly+69);
+
+  return canvas.toDataURL('image/png').split(',')[1];
+}
+
+// ═══════════════════════════════════════════════
+// EXCEL GENERATION (ExcelJS)
+// ═══════════════════════════════════════════════
+
+// iO Colors (ARGB format for ExcelJS)
+const XC = {
+  primary:'FF372473', secondary:'FF6B46E1', accent:'FFFF7145',
+  lightBg:'FFF0ECFC', white:'FFFFFFFF', black:'FF000000',
+  gray:'FF9BA0A5', teal:'FF00AAA0', gold:'FFA0966E',
+  altRow:'FFFAFAFA', bestRow:'FFFFF9FF', baseRow:'FFFFF0FF',
+  green:'FF2E7D32', red:'FFC62828', greenBg:'FFE8F5E9', redBg:'FFFFEBEE',
+  headerLight:'FFE8E0F8', borderColor:'FFE0D8F8',
+};
+
+function applyStyle(cell, opts={}) {
+  const {font={}, fill=null, align={}, border=false, numFmt=null} = opts;
+  cell.font = { name:'Arial', size:10, ...font };
+  if (fill) cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:fill} };
+  cell.alignment = { vertical:'middle', wrapText:false, ...align };
+  if (border) cell.border = {
+    top:{style:'thin',color:{argb:XC.borderColor}},
+    bottom:{style:'thin',color:{argb:XC.borderColor}},
+    left:{style:'thin',color:{argb:XC.borderColor}},
+    right:{style:'thin',color:{argb:XC.borderColor}},
+  };
+  if (numFmt) cell.numFmt = numFmt;
+}
+
+function titleRow(ws, rowNum, text, totalCols, light=false) {
+  ws.mergeCells(rowNum, 1, rowNum, totalCols);
+  const cell = ws.getCell(rowNum, 1);
+  cell.value = text;
+  applyStyle(cell, {
+    font:{name:'Arial',size:14,bold:true,color:{argb:XC.white}},
+    fill: light ? XC.secondary : XC.primary,
+    align:{horizontal:'left'}
+  });
+  ws.getRow(rowNum).height = 32;
+}
+
+function sectionHdr(ws, rowNum, text, totalCols) {
+  ws.mergeCells(rowNum, 1, rowNum, totalCols);
+  const cell = ws.getCell(rowNum, 1);
+  cell.value = text;
+  applyStyle(cell, {
+    font:{name:'Arial',size:11,bold:true,color:{argb:XC.white}},
+    fill: XC.secondary, align:{horizontal:'left'}
+  });
+  ws.getRow(rowNum).height = 26;
+}
+
+function infoRow(ws, rowNum, text, totalCols) {
+  ws.mergeCells(rowNum, 1, rowNum, totalCols);
+  const cell = ws.getCell(rowNum, 1);
+  cell.value = text;
+  applyStyle(cell, {
+    font:{name:'Arial',size:10,italic:true,color:{argb:XC.gray}},
+    fill: XC.lightBg, align:{horizontal:'left'}
+  });
+  ws.getRow(rowNum).height = 18;
+}
+
+function hdrCell(cell, text, center=true) {
+  cell.value = text;
+  applyStyle(cell, {
+    font:{name:'Arial',size:10,bold:true,color:{argb:XC.white}},
+    fill: XC.primary, align:{horizontal:center?'center':'left'}, border:true
+  });
+}
+
+function subHdrCell(cell, text) {
+  cell.value = text;
+  applyStyle(cell, {
+    font:{name:'Arial',size:9,bold:true,color:{argb:XC.white}},
+    fill: XC.secondary, align:{horizontal:'center'}, border:true
+  });
+}
+
+function dataCell(cell, val, opts={}) {
+  const {ev=false, bold=false, color=XC.black, align='left', numFmt=null, fill=null} = opts;
+  cell.value = val;
+  applyStyle(cell, {
+    font:{name:'Arial',size:10,bold,color:{argb:color}},
+    fill: fill || (ev ? XC.altRow : null),
+    align:{horizontal:align}, border:true, numFmt
+  });
+}
+
+function avgCell(cell, val, opts={}) {
+  cell.value = val;
+  applyStyle(cell, {
+    font:{name:'Arial',size:10,bold:true,color:{argb:XC.primary}},
+    fill:XC.lightBg, align:{horizontal:opts.align||'right'}, border:true
+  });
+}
+
+// ── Sheet 1: Origins ─────────────────────────
+function buildOrigins(wb, origAddr) {
+  const ws = wb.addWorksheet('Origins');
+  ws.views = [{state:'frozen',ySplit:2}];
+  titleRow(ws, 1, 'ORIGINS', 2);
+  hdrCell(ws.getCell(2,1), '#', true); hdrCell(ws.getCell(2,2), 'Address', false);
+  ws.getRow(2).height = 22;
+  origAddr.forEach((a,i) => {
+    const r=i+3, ev=i%2===0;
+    dataCell(ws.getCell(r,1), i+1, {ev,align:'center'});
+    dataCell(ws.getCell(r,2), a, {ev});
+    ws.getRow(r).height = 18;
+  });
+  ws.getColumn(1).width = 6; ws.getColumn(2).width = 60;
+}
+
+// ── Sheet 2: Destinations ────────────────────
+function buildDestinations(wb, destAddr) {
+  const ws = wb.addWorksheet('Destinations');
+  ws.views = [{state:'frozen',ySplit:2}];
+  titleRow(ws, 1, 'DESTINATIONS', 2);
+  hdrCell(ws.getCell(2,1), '#', true); hdrCell(ws.getCell(2,2), 'Address', false);
+  ws.getRow(2).height = 22;
+  destAddr.forEach((a,i) => {
+    const r=i+3, ev=i%2===0;
+    dataCell(ws.getCell(r,1), i+1, {ev,align:'center'});
+    dataCell(ws.getCell(r,2), a, {ev});
+    ws.getRow(r).height = 18;
+  });
+  ws.getColumn(1).width = 6; ws.getColumn(2).width = 60;
+}
+
+// ── Sheet 3: Map ──────────────────────────────
+function buildMap(wb, origAddr, destAddr, coords, mapBase64) {
+  const ws = wb.addWorksheet('Map');
+  const totalCols = 15;
+
+  titleRow(ws, 1, 'MAP OVERVIEW — Geographic Distribution of Origins and Destinations', totalCols);
+  infoRow(ws, 2, `Origins: ${origAddr.length}   ·   Destinations: ${destAddr.length}   ·   White circles = Origins   ·   Purple circles = Destinations`, totalCols);
+
+  // Rows 3–41: image area (39 rows × ~14pt = ~560pt height; 15 cols × 9.5 chars = ~975px width)
+  for (let r = 3; r <= 41; r++) ws.getRow(r).height = 14.4;
+  for (let c = 1; c <= 15; c++) ws.getColumn(c).width = 9.5;
+
+  if (mapBase64) {
+    try {
+      const imgId = wb.addImage({ base64: mapBase64, extension: 'png' });
+      ws.addImage(imgId, { tl: { col: 0, row: 2 }, br: { col: 15, row: 41 }, editAs: 'oneCell' });
+    } catch(e) { console.warn('Image embed failed:', e); }
+  }
+
+  // Address table below image (row 43+)
+  const ts = 43;
+  ws.mergeCells(ts, 1, ts, 5);
+  const th = ws.getCell(ts, 1);
+  th.value = 'ADDRESS COORDINATES';
+  applyStyle(th, { font:{name:'Arial',size:11,bold:true,color:{argb:XC.white}}, fill:XC.secondary, align:{horizontal:'left'} });
+  ws.getRow(ts).height = 22;
+
+  hdrCell(ws.getCell(ts+1,1),'Type',true); hdrCell(ws.getCell(ts+1,2),'Label',true);
+  hdrCell(ws.getCell(ts+1,3),'Address',false); hdrCell(ws.getCell(ts+1,4),'Latitude',true);
+  hdrCell(ws.getCell(ts+1,5),'Longitude',true);
+  ws.getRow(ts+1).height=20;
+
+  let r = ts+2;
+  origAddr.forEach((a,i) => {
+    const ev=i%2===0, c=coords[a];
+    dataCell(ws.getCell(r,1),'Origin',{ev,color:XC.primary,bold:true,align:'center'});
+    dataCell(ws.getCell(r,2),`O${i+1}`,{ev,align:'center'});
+    dataCell(ws.getCell(r,3),a,{ev});
+    dataCell(ws.getCell(r,4),c?c.lat:'',{ev,align:'right',numFmt:'0.00000'});
+    dataCell(ws.getCell(r,5),c?c.lng:'',{ev,align:'right',numFmt:'0.00000'});
+    ws.getRow(r).height=18; r++;
+  });
+  destAddr.forEach((a,i) => {
+    const ev=i%2===0, c=coords[a];
+    dataCell(ws.getCell(r,1),'Destination',{ev,color:XC.secondary,bold:true,align:'center'});
+    dataCell(ws.getCell(r,2),`D${i+1}`,{ev,align:'center'});
+    dataCell(ws.getCell(r,3),a,{ev});
+    dataCell(ws.getCell(r,4),c?c.lat:'',{ev,align:'right',numFmt:'0.00000'});
+    dataCell(ws.getCell(r,5),c?c.lng:'',{ev,align:'right',numFmt:'0.00000'});
+    ws.getRow(r).height=18; r++;
+  });
+  ws.getColumn(1).width=14; ws.getColumn(2).width=8;
+  ws.getColumn(3).width=55; ws.getColumn(4).width=14; ws.getColumn(5).width=14;
+}
+
+// ── Sheets 4 & 5: Matrix ─────────────────────
+function colLetter(n) { // 1-indexed column number → Excel letter(s)
+  let s=''; while(n>0){s=String.fromCharCode(65+(n-1)%26)+s;n=Math.floor((n-1)/26);}return s;
+}
+
+function buildMatrix(wb, sheetName, title, matrix, origAddr, destAddr) {
+  if (!matrix) return;
+  const ws = wb.addWorksheet(sheetName);
+  const nO = origAddr.length, nD = destAddr.length;
+  const totalCols = 2 + nD*2;
+  const dataFirstRow = 5;   // first origin data row (1-indexed)
+  const dataLastRow  = 4 + nO;
+
+  ws.views = [{state:'frozen', xSplit:1, ySplit:4}];
+  titleRow(ws, 1, title, totalCols);
+
+  // Row 2: destination headers (merged km+min pairs)
+  ws.getCell(2,1).value = 'Origin';
+  applyStyle(ws.getCell(2,1),{font:{name:'Arial',size:10,bold:true,color:{argb:XC.white}},fill:XC.primary,align:{horizontal:'left'},border:true});
+  ws.getCell(2,2).value = '';
+  applyStyle(ws.getCell(2,2),{font:{name:'Arial',size:10,bold:true,color:{argb:XC.white}},fill:XC.primary,border:true});
+  destAddr.forEach((d,j) => {
+    const col=3+j*2;
+    ws.mergeCells(2,col,2,col+1);
+    const cell=ws.getCell(2,col);
+    cell.value=d;
+    applyStyle(cell,{font:{name:'Arial',size:9,bold:true,color:{argb:XC.white}},fill:XC.primary,align:{horizontal:'center',wrapText:true},border:true});
+  });
+  ws.getRow(2).height=40;
+
+  // Row 3: sub-headers (Distance / Time)
+  ws.getCell(3,1).value=''; applyStyle(ws.getCell(3,1),{fill:XC.secondary,border:true});
+  ws.getCell(3,2).value=''; applyStyle(ws.getCell(3,2),{fill:XC.secondary,border:true});
+  destAddr.forEach((_,j) => {
+    subHdrCell(ws.getCell(3,3+j*2),'Distance (km)');
+    subHdrCell(ws.getCell(3,4+j*2),'Time (min)');
+  });
+  ws.getRow(3).height=18;
+
+  // Row 4: AVERAGE row — formulas
+  ws.getCell(4,1).value=''; avgCell(ws.getCell(4,1));
+  const avgLbl = ws.getCell(4,2);
+  avgLbl.value='Average';
+  applyStyle(avgLbl,{font:{name:'Arial',size:10,bold:true,color:{argb:XC.primary}},fill:XC.lightBg,align:{horizontal:'left'},border:true});
+
+  for(let j=0;j<nD;j++){
+    const kmCol = colLetter(3+j*2);
+    const minCol = colLetter(4+j*2);
+    // Distance average (skip "N/A" text)
+    const cKm = ws.getCell(4, 3+j*2);
+    cKm.value = { formula: `IFERROR(AVERAGE(${kmCol}${dataFirstRow}:${kmCol}${dataLastRow}),"")`, result: null };
+    applyStyle(cKm,{font:{name:'Arial',size:10,bold:true,color:{argb:XC.primary}},fill:XC.lightBg,align:{horizontal:'right'},border:true,numFmt:'0.0'});
+    // Time average
+    const cMin = ws.getCell(4, 4+j*2);
+    cMin.value = { formula: `IFERROR(AVERAGE(${minCol}${dataFirstRow}:${minCol}${dataLastRow}),"")`, result: null };
+    applyStyle(cMin,{font:{name:'Arial',size:10,bold:true,color:{argb:XC.primary}},fill:XC.lightBg,align:{horizontal:'right'},border:true,numFmt:'0'});
+  }
+  ws.getRow(4).height=20;
+
+  // Data rows (values from API — these are source data, not calculated)
+  origAddr.forEach((addr,i) => {
+    const r=i+dataFirstRow, ev=i%2===0;
+    dataCell(ws.getCell(r,1),addr,{ev});
+    dataCell(ws.getCell(r,2),'',{ev});
+    for(let j=0;j<nD;j++){
+      const el=matrix[i][j];
+      if(el){
+        dataCell(ws.getCell(r,3+j*2),el.distKm,{ev,align:'right',numFmt:'0.0'});
+        dataCell(ws.getCell(r,4+j*2),el.durMin,{ev,align:'right',numFmt:'0'});
+      } else {
+        dataCell(ws.getCell(r,3+j*2),'N/A',{ev,align:'center',color:XC.gray});
+        dataCell(ws.getCell(r,4+j*2),'N/A',{ev,align:'center',color:XC.gray});
+      }
+    }
+    ws.getRow(r).height=18;
+  });
+
+  ws.getColumn(1).width=50; ws.getColumn(2).width=6;
+  for(let j=0;j<nD;j++){ws.getColumn(3+j*2).width=14;ws.getColumn(4+j*2).width=12;}
+}
+
+// ── Sheet 6: Summary ──────────────────────────
+function buildSummarySheet(wb, driving, transit, origAddr, destAddr, settings) {
+  const ws = wb.addWorksheet('Summary');
+  const nD = destAddr.length;
+  const totalCols = 7;
+  let row = 1;
+
+  function matTimeCol(j) { return colLetter(4 + j*2); }
+  const AVG_ROW = 4;
+
+  titleRow(ws, row++, 'COMMUTE ANALYSIS — DESTINATION COMPARISON', totalCols);
+  infoRow(ws, row++,
+    `Day: ${settings.day}  ·  Arrival: ${settings.time}  ·  Generated: ${new Date().toLocaleDateString('en-GB')}  ·  ${origAddr.length} origins  ·  ${destAddr.length} destinations`,
+    totalCols);
+  row++;
+
+  // ── Conditional formatting helper ───────────────────────────────────────
+  // Strategy: rank cell gets priority 1 (dark purple bg + white text → clearly visible).
+  //           Full row gets priority 2 (medium purple bg + dark text → rank cell's rule wins for col D).
+  //           Delta columns get their own rules with dark-readable green/red.
+  const BEST_ROW_BG  = 'FFD4C5F7'; // medium purple — readable with dark text
+  const BEST_RANK_BG = XC.secondary; // strong purple (#6B46E1) — white text clearly visible
+  const BEST_ROW_FG  = XC.primary;   // dark purple text on medium purple row
+
+  function addSectionCF(secStart, secEnd) {
+    const cMin = `MIN($C$${secStart}:$C$${secEnd})`;
+    const bestFml = [`$C${secStart}=${cMin}`];
+
+    // Priority 1 — Rank cell D: white bg + purple text #6B46E1 (clearly visible)
+    ws.addConditionalFormatting({
+      ref: `D${secStart}:D${secEnd}`,
+      rules: [{
+        priority: 1,
+        type: 'expression',
+        formulae: bestFml,
+        style: {
+          fill: { type:'pattern', pattern:'solid', fgColor:{ argb: XC.white } },
+          font: { bold: true, color:{ argb: XC.secondary }, name:'Arial', size:12 }
+        }
+      }]
+    });
+
+    // Priority 2 — Full row A:G: medium purple bg + dark text (rank cell overridden by priority 1)
+    ws.addConditionalFormatting({
+      ref: `A${secStart}:G${secEnd}`,
+      rules: [{
+        priority: 2,
+        type: 'expression',
+        formulae: bestFml,
+        style: {
+          fill: { type:'pattern', pattern:'solid', fgColor:{ argb: BEST_ROW_BG } },
+          font: { bold: true, color:{ argb: BEST_ROW_FG }, name:'Arial', size:10 }
+        }
+      }]
+    });
+
+    // Delta colors handled by numFmt: [Red]+0;[Green]-0;[Color15]"—"
+  }
+
+  // ── Combined CF ──────────────────────────────────────────────────────────
+  function addCombinedCF(secStart, secEnd) {
+    const gMin = `MIN($G$${secStart}:$G$${secEnd})`;
+    const cMin = `MIN($C$${secStart}:$C$${secEnd})`;
+    const eMin = `MIN($E$${secStart}:$E$${secEnd})`;
+
+    // Priority 1 — Drive rank col D: white bg + purple text when drive = best
+    ws.addConditionalFormatting({
+      ref: `D${secStart}:D${secEnd}`,
+      rules: [{
+        priority: 1,
+        type: 'expression',
+        formulae: [`$C${secStart}=${cMin}`],
+        style: {
+          fill: { type:'pattern', pattern:'solid', fgColor:{ argb: XC.white } },
+          font: { bold: true, color:{ argb: XC.secondary }, name:'Arial', size:12 }
+        }
+      }]
+    });
+
+    // Priority 2 — Transit rank col F: white bg + purple text when transit = best
+    ws.addConditionalFormatting({
+      ref: `F${secStart}:F${secEnd}`,
+      rules: [{
+        priority: 2,
+        type: 'expression',
+        formulae: [`$E${secStart}=${eMin}`],
+        style: {
+          fill: { type:'pattern', pattern:'solid', fgColor:{ argb: XC.white } },
+          font: { bold: true, color:{ argb: XC.secondary }, name:'Arial', size:12 }
+        }
+      }]
+    });
+
+    // Priority 3 — Full row: medium purple when combined score = best
+    ws.addConditionalFormatting({
+      ref: `A${secStart}:G${secEnd}`,
+      rules: [{
+        priority: 3,
+        type: 'expression',
+        formulae: [`$G${secStart}=${gMin}`],
+        style: {
+          fill: { type:'pattern', pattern:'solid', fgColor:{ argb: BEST_ROW_BG } },
+          font: { bold: true, color:{ argb: BEST_ROW_FG }, name:'Arial', size:10 }
+        }
+      }]
+    });
+  }
+
+  // ── Section builder ──────────────────────────────────────────────────────
+  function buildSection(hasMatrix, sheetRef, sectionTitle) {
+    if (!hasMatrix) return;
+    sectionHdr(ws, row++, sectionTitle, totalCols);
+
+    const hdrs = ['#', 'Destination', 'Avg Time (min)', 'Rank',
+                  'vs Current bldg (min)', 'vs Current bldg (%)'];
+    hdrs.forEach((h, c) => hdrCell(ws.getCell(row, c+1), h, c !== 1));
+    ws.getRow(row).height = 24; row++;
+
+    const secDataStart = row;
+
+    destAddr.forEach((dest, i) => {
+      const isCurrent = i === 0;
+      const ev = i % 2 === 0;
+      const fillColor = isCurrent ? XC.baseRow : ev ? XC.altRow : null;
+      const co = { fill: fillColor, border: true };
+
+      // Col 1: #
+      dataCell(ws.getCell(row, 1), i+1, {...co, align:'center', color:XC.gray});
+
+      // Col 2: Destination
+      const c2 = ws.getCell(row, 2);
+      c2.value = dest + (isCurrent ? '  [Current building]' : '');
+      applyStyle(c2, {
+        font:{name:'Arial',size:10,bold:isCurrent,color:{argb:isCurrent?XC.secondary:XC.black}},
+        ...co, align:{horizontal:'left'}
+      });
+
+      // Col 3: Avg Time — formula referencing matrix sheet
+      const c3 = ws.getCell(row, 3);
+      c3.value = { formula: `${sheetRef}!${matTimeCol(i)}$${AVG_ROW}`, result: null };
+      applyStyle(c3, {font:{name:'Arial',size:10,bold:true,color:{argb:XC.primary}},...co,align:{horizontal:'right'}});
+      c3.numFmt = '0';
+
+      // Col 4: Rank — "★  1" for best, "#N" for others
+      const c4 = ws.getCell(row, 4);
+      if (isCurrent) {
+        c4.value = { formula: `IF(IFERROR(RANK(C${row},$C$${secDataStart}:$C$${secDataStart+nD-1},1),0)=1,"★  1",IFERROR("#"&RANK(C${row},$C$${secDataStart}:$C$${secDataStart+nD-1},1),""))`, result: null };
+        applyStyle(c4, {font:{name:'Arial',size:10,color:{argb:XC.gray}},...co,align:{horizontal:'center'}});
+      } else {
+        c4.value = { formula: `IF(IFERROR(RANK(C${row},$C$${secDataStart}:$C$${secDataStart+nD-1},1),0)=1,"★  1",IFERROR("#"&RANK(C${row},$C$${secDataStart}:$C$${secDataStart+nD-1},1),""))`, result: null };
+        applyStyle(c4, {font:{name:'Arial',size:10,color:{argb:XC.primary}},...co,align:{horizontal:'center'}});
+      }
+
+      // Col 5: vs Current bldg (min)
+      const c5 = ws.getCell(row, 5);
+      if (isCurrent) {
+        c5.value = '—';
+        applyStyle(c5, {...co, align:{horizontal:'center'}, font:{name:'Arial',size:10,color:{argb:XC.gray}}});
+      } else {
+        c5.value = { formula: `IFERROR(C${row}-$C$${secDataStart},"")`, result: null };
+        applyStyle(c5, {font:{name:'Arial',size:10,color:{argb:XC.gray}},...co,align:{horizontal:'right'}});
+        c5.numFmt = '[Red]+0;[Green]-0;[Color15]"—"';
+      }
+
+      // Col 6: vs Current bldg (%)
+      const c6 = ws.getCell(row, 6);
+      if (isCurrent) {
+        c6.value = '—';
+        applyStyle(c6, {...co, align:{horizontal:'center'}, font:{name:'Arial',size:10,color:{argb:XC.gray}}});
+      } else {
+        c6.value = { formula: `IFERROR((C${row}-$C$${secDataStart})/$C$${secDataStart},"")`, result: null };
+        applyStyle(c6, {font:{name:'Arial',size:10,color:{argb:XC.gray}},...co,align:{horizontal:'right'}});
+        c6.numFmt = '[Red]+0%;[Green]-0%;[Color15]"—"';
+      }
+
+      ws.getRow(row).height = 20;
+      row++;
+    });
+
+    // Apply conditional formatting to this section's data range
+    addSectionCF(secDataStart, secDataStart + nD - 1);
+
+    row++; // empty row after section
+  }
+
+  const drvRef = driving ? 'Driving' : null;
+  const trnRef = transit ? "'Public Transport'" : null;
+  buildSection(!!driving, drvRef, '🚗  DRIVING — Average Commute Time per Destination');
+  buildSection(!!transit, trnRef, '🚌  PUBLIC TRANSIT — Average Commute Time per Destination');
+
+  // ── Combined section ─────────────────────────────────────────────────────
+  if (driving && transit) {
+    sectionHdr(ws, row++, '📊  COMBINED — Driving + Transit Comparison (original order)', 7);
+    const cHdrs = ['#','Destination','Avg Drive (min)','Drive Rank','Avg Transit (min)','Transit Rank','Combined Score'];
+    cHdrs.forEach((h, c) => hdrCell(ws.getCell(row, c+1), h, c !== 1));
+    ws.getRow(row).height = 24; row++;
+
+    const cSecStart = row;
+
+    destAddr.forEach((dest, i) => {
+      const isCurrent = i === 0;
+      const ev = i % 2 === 0;
+      const fill = isCurrent ? XC.baseRow : ev ? XC.altRow : null;
+      const co = { fill, border: true };
+
+      dataCell(ws.getCell(row,1), i+1, {...co, align:'center', color:XC.gray});
+
+      const c2=ws.getCell(row,2);
+      c2.value = dest + (isCurrent ? '  [Current building]' : '');
+      applyStyle(c2,{font:{name:'Arial',size:10,bold:isCurrent,color:{argb:isCurrent?XC.secondary:XC.black}},...co,align:{horizontal:'left'}});
+
+      // Avg Drive
+      const c3=ws.getCell(row,3);
+      c3.value={formula:`Driving!${matTimeCol(i)}$${AVG_ROW}`,result:null};
+      applyStyle(c3,{font:{name:'Arial',size:10,color:{argb:XC.black}},...co,align:{horizontal:'right'}}); c3.numFmt='0';
+
+      // Drive Rank (★ for best)
+      const c4=ws.getCell(row,4);
+      c4.value={formula:`IF(IFERROR(RANK(C${row},$C$${cSecStart}:$C$${cSecStart+nD-1},1),0)=1,"★  1",IFERROR("#"&RANK(C${row},$C$${cSecStart}:$C$${cSecStart+nD-1},1),""))`,result:null};
+      applyStyle(c4,{font:{name:'Arial',size:10,color:{argb:XC.primary}},...co,align:{horizontal:'center'}});
+
+      // Avg Transit
+      const c5=ws.getCell(row,5);
+      c5.value={formula:`'Public Transport'!${matTimeCol(i)}$${AVG_ROW}`,result:null};
+      applyStyle(c5,{font:{name:'Arial',size:10,color:{argb:XC.black}},...co,align:{horizontal:'right'}}); c5.numFmt='0';
+
+      // Transit Rank (★ for best)
+      const c6=ws.getCell(row,6);
+      c6.value={formula:`IF(IFERROR(RANK(E${row},$E$${cSecStart}:$E$${cSecStart+nD-1},1),0)=1,"★  1",IFERROR("#"&RANK(E${row},$E$${cSecStart}:$E$${cSecStart+nD-1},1),""))`,result:null};
+      applyStyle(c6,{font:{name:'Arial',size:10,color:{argb:XC.primary}},...co,align:{horizontal:'center'}});
+
+      // Combined score
+      const c7=ws.getCell(row,7);
+      c7.value={formula:`IFERROR(AVERAGE(C${row},E${row}),"")`,result:null};
+      applyStyle(c7,{font:{name:'Arial',size:10,bold:true,color:{argb:XC.primary}},...co,align:{horizontal:'right'}}); c7.numFmt='0.0';
+
+      ws.getRow(row).height=20; row++;
+    });
+
+    addCombinedCF(cSecStart, cSecStart + nD - 1);
+  }
+
+  ws.getColumn(1).width=6;  ws.getColumn(2).width=60;
+  ws.getColumn(3).width=18; ws.getColumn(4).width=14;
+  ws.getColumn(5).width=22; ws.getColumn(6).width=20;
+  ws.getColumn(7).width=18;
+}
+
+// ═══════════════════════════════════════════════
+// DOWNLOAD
+// ═══════════════════════════════════════════════
+async function downloadExcel() {
+  if (!analysisResults) { alert('Please run the analysis first.'); return; }
+  const { origAddr, destAddr, driving, transit, coords, settings } = analysisResults;
+
+  const dlBtn = document.getElementById('dl-btn');
+  dlBtn.disabled = true;
+  dlBtn.textContent = '⏳  Building Excel…';
+
+  try {
+    // Draw canvas map
+    const mapBase64 = drawMapCanvas(origAddr, destAddr, coords);
+
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'iO Partners Commute Analysis Tool';
+    wb.lastModifiedBy = 'iO Partners';
+    wb.created = new Date();
+
+    buildOrigins(wb, origAddr);
+    buildDestinations(wb, destAddr);
+    buildMap(wb, origAddr, destAddr, coords, mapBase64);
+    buildMatrix(wb, 'Driving', 'DRIVING TIMES — Distance and Duration by Origin–Destination Pair', driving, origAddr, destAddr);
+    buildMatrix(wb, 'Public Transport', 'PUBLIC TRANSIT TIMES — Distance and Duration by Origin–Destination Pair', transit, origAddr, destAddr);
+    buildSummarySheet(wb, driving, transit, origAddr, destAddr, settings);
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `iO_Commute_Analysis_${settings.day.slice(0,3)}_${settings.time.replace(':','h')}_${new Date().toISOString().slice(0,10)}.xlsx`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch(err) {
+    alert('Excel generation error: ' + err.message); console.error(err);
+  }
+
+  dlBtn.disabled = false;
+  dlBtn.textContent = '↓  Download Excel Report';
+}
+
+// ═══════════════════════════════════════════════
+// CLEAR
+// ═══════════════════════════════════════════════
+function clearAll() {
+  ['orig-in','dest-in'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('orig-cnt').textContent='0 addresses';
+  document.getElementById('dest-cnt').textContent='0 addresses';
+  document.getElementById('res-card').style.display='none';
+  document.getElementById('dl-btn').disabled=true;
+  clearMarkers(); analysisResults=null; hideProg();
+}
+
+// INIT
+document.addEventListener('DOMContentLoaded', () => document.getElementById('pw-in').focus());
+</script>
+</body>
+</html>
